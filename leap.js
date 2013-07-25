@@ -484,13 +484,13 @@ var Frame = module.exports = function(data) {
   this.data = data;
   this.type = 'frame'; // used by event emitting
   this.currentFrameRate = data.currentFrameRate;
-  var handMap = {};
+  var handIdxMap = {};
   for (var handIdx = 0, handCount = data.hands.length; handIdx != handCount; handIdx++) {
     var hand = new Hand(data.hands[handIdx]);
     hand.frame = this;
     this.hands.push(hand);
     this.handsMap[hand.id] = hand;
-    handMap[hand.id] = handIdx;
+    handIdxMap[hand.id] = handIdx;
   }
   for (var pointableIdx = 0, pointableCount = data.pointables.length; pointableIdx != pointableCount; pointableIdx++) {
     var pointable = new Pointable(data.pointables[pointableIdx]);
@@ -498,8 +498,8 @@ var Frame = module.exports = function(data) {
     this.pointables.push(pointable);
     this.pointablesMap[pointable.id] = pointable;
     (pointable.tool ? this.tools : this.fingers).push(pointable);
-    if (pointable.handId !== undefined && handMap.hasOwnProperty(pointable.handId)) {
-      var hand = this.hands[handMap[pointable.handId]];
+    if (pointable.handId !== undefined && handIdxMap.hasOwnProperty(pointable.handId)) {
+      var hand = this.hands[handIdxMap[pointable.handId]];
       hand.pointables.push(pointable);
       (pointable.tool ? hand.tools : hand.fingers).push(pointable);
     }
@@ -810,19 +810,21 @@ Frame.prototype.dump = function() {
  */
 Frame.Invalid = {
   valid: false,
-  hands: [],
+  pointables: [],
   fingers: [],
   tools: [],
+  hands: [],
   gestures: [],
-  pointables: [],
   pointable: function() { return Pointable.Invalid },
   finger: function() { return Pointable.Invalid },
+  tool: function() { return Pointable.Invalid },
   hand: function() { return Hand.Invalid },
+  gesture: function() { return createGesture.Invalid },
   toString: function() { return "invalid frame" },
   dump: function() { return this.toString() },
-  rotationAngle: function() { return 0.0; },
   rotationMatrix: function() { return mat3.create(); },
   rotationAxis: function() { return vec3.create(); },
+  rotationAngle: function() { return 0.0; },
   scaleFactor: function() { return 1.0; },
   translation: function() { return vec3.create(); }
 };
@@ -1316,6 +1318,30 @@ KeyTapGesture.prototype.toString = function() {
   return "KeyTapGesture ["+JSON.stringify(this)+"]";
 }
 
+/**
+ * An invalid Gesture object.
+ *
+ * You can use an invalid Gesture object in comparisons testing
+ * whether a given Gesture instance is valid or invalid. (You can also use the
+ * Gesture valid property.)
+ *
+ * @static
+ * @type {Leap.Gesture}
+ * @name Invalid
+ * @memberof Leap.Gesture
+ */
+createGesture.Invalid = {
+  valid: false,
+  id: -1,
+  type: null,
+  state: null,
+  duration: 0,
+  pointableIds: [],
+  handIds: [],
+  toString: function() { return "invalid gesture" },
+  dump: function() { return this.toString(); },
+};
+
 },{"events":17,"gl-matrix":19,"underscore":20}],7:[function(require,module,exports){
 var Pointable = require("./pointable")
   , glMatrix = require("gl-matrix")
@@ -1673,16 +1699,17 @@ Hand.prototype.toString = function() {
  */
 Hand.Invalid = {
   valid: false,
+  pointables: [],
   fingers: [],
   tools: [],
-  pointables: [],
   pointable: function() { return Pointable.Invalid },
   finger: function() { return Pointable.Invalid },
-  toString: function() { return "invalid frame" },
+  tool: function() { return Pointable.Invalid },
+  toString: function() { return "invalid hand" },
   dump: function() { return this.toString(); },
-  rotationAngle: function() { return 0.0; },
   rotationMatrix: function() { return mat3.create(); },
   rotationAxis: function() { return vec3.create(); },
+  rotationAngle: function() { return 0.0; },
   scaleFactor: function() { return 1.0; },
   translation: function() { return vec3.create(); }
 };
